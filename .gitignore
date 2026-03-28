@@ -1,0 +1,27 @@
+# OS・エディタ
+.DS_Store
+*.swp
+*.swo
+.cursor/
+
+# バイナリ・メディア
+*.pdf
+*.xlsx
+*.mp4
+*.jpeg
+*.jpg
+*.png
+*.pptx
+*.mov
+*.ai
+*.psd
+
+# 依存パッケージ
+node_modules/
+.next/
+dist/
+build/
+
+# 環境変数
+.env
+.env.local
