@@ -1,16 +1,18 @@
 # KENTERA ホーム
 
 ## 📁 Finderフォルダ
-- [videos](file:///Users/itsukiiwai/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/KENTERA/videos_%E6%96%B0%E8%A6%8F/)
-- [slides](file:///Users/itsukiiwai/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/KENTERA/slides_%E6%96%B0%E8%A6%8F/)
-- [contracts](file:///Users/itsukiiwai/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/KENTERA/contracts_%E6%96%B0%E8%A6%8F/)
-- [code](file:///Users/itsukiiwai/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/KENTERA/code_%E6%96%B0%E8%A6%8F/)
+- [プロジェクト全体](file:///Users/itsukiiwai/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/KENTERA/)
+- [Tools（開発ツール）](file:///Users/itsukiiwai/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/KENTERA/Tools/)
+- [スライド（元）](file:///Users/itsukiiwai/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/KENTERA/%E5%85%83%E3%82%B9%E3%83%A9%E3%82%A4%E3%83%89/)
+- [スライド（修正後）](file:///Users/itsukiiwai/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/KENTERA/%E4%BF%AE%E6%AD%A3%E5%BE%8C%E3%82%B9%E3%83%A9%E3%82%A4%E3%83%89/)
+- [動画素材](file:///Users/itsukiiwai/%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/KENTERA/KENTERA%E9%9F%B3%E5%A3%B0/)
 
 ## 🔗 GitHub
-- [リポジトリ](https://github.com/Icchaso/kentera)
+- [リポジトリ（Obsidianバックアップ）](https://github.com/Icchaso/kentera/tree/main)
+- [Tools コード（tools branch）](https://github.com/Icchaso/kentera/tree/tools)
 
 ## 📅 最終更新
-- 更新日：
+- 更新日：2026-03-28
 
 ---
 
