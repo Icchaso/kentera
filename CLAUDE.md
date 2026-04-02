@@ -52,6 +52,14 @@
 - ミーティングテンプレート.md — 議事録の雛形
 - 契約院ページテンプレート.md — 院別管理ページの雛形
 
+## スライド生成システム
+- 仕様書: `SLIDE_SYSTEM.md`
+- スクリプト: `scripts/` ディレクトリ
+- 実行: `node scripts/generate-slides.mjs <台本MDファイルパス>`
+- 依存: `scripts/` で `npm install`（初回のみ）
+- QA: markitdown（コンテンツ）+ LibreOffice→pdftoppm（ビジュアル）
+- 納品先: Finder / Google Drive / 台本サイト（kentera-scripts）
+
 ## 注意事項
 - 患者の個人情報を含むノートは作成しないこと
 - 動画台本の著作権は KENTERA に帰属

@@ -1,0 +1,12 @@
+{
+  "name": "kentera-slides",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "pptxgenjs": "^3.12.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-icons": "^5.4.0",
+    "sharp": "^0.33.0"
+  }
+}
