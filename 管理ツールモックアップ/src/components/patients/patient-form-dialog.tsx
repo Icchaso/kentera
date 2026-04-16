@@ -104,11 +104,13 @@ export function PatientFormDialog({ open, onOpenChange, patient }: PatientFormDi
   }, [open, patient, form]);
 
   const onSubmit = (values: FormValues) => {
+    const { occupation: occupationLabel, ...rest } = values;
     const base = {
-      ...values,
+      ...rest,
       preferredStaffId: values.preferredStaffId === "none" ? undefined : values.preferredStaffId,
       email: values.email || undefined,
-      occupation: values.occupation || undefined,
+      occupation: undefined,
+      occupationLabel: occupationLabel || undefined,
       medicalHistory: values.medicalHistory || undefined,
       allergies: values.allergies || undefined,
       notes: values.notes || undefined,
@@ -205,7 +207,7 @@ export function PatientFormDialog({ open, onOpenChange, patient }: PatientFormDi
                 <SelectContent>
                   <SelectItem value="none">未設定</SelectItem>
                   {staffList
-                    .filter((s) => s.role !== "reception")
+                    .filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner")
                     .map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.displayName}

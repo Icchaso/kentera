@@ -59,5 +59,5 @@ export function getPatientRelations(patientId: string) {
 }
 
 export function getAllStaffOptions() {
-  return staffList.filter((s) => s.role !== "reception");
+  return staffList.filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner");
 }

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, MessageCircle, Ban } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, MessageCircle, Ban, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { reservations, patients, staffList, menus, tenant } from "@/lib/data/seed";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
-const TODAY = new Date("2026-04-15");
+const TODAY = new Date("2026-04-16");
 
 const STATUS_CFG: Record<
   string,
@@ -59,7 +59,7 @@ export default function ReservationsPage() {
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <PageHeader
         title="予約管理"
-        description={`${tenant.name}・スタッフ${staffList.filter((s) => s.role !== "reception").length}名・ベッド${tenant.bedCount}台`}
+        description={`${tenant.name}・施術者${staffList.filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner").length}名・ベッド${tenant.bedCount}台`}
         actions={
           <>
             <Button variant="outline" disabled>
@@ -74,7 +74,7 @@ export default function ReservationsPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">本日の予約</p>
@@ -91,6 +91,17 @@ export default function ReservationsPage() {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">キャンセル</p>
             <p className="text-2xl font-bold text-rose-600">{todayCancelled}件</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+              指名予約率
+            </p>
+            <p className="text-2xl font-bold text-amber-600">
+              {Math.round((reservations.filter((r) => r.isDesignated).length / reservations.length) * 100)}%
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -175,7 +186,12 @@ export default function ReservationsPage() {
                                 <span className="font-mono text-[10px] text-muted-foreground">
                                   {formatDate(r.startAt, "time")}
                                 </span>
-                                <span className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
+                                <div className="flex items-center gap-0.5">
+                                  {r.isDesignated && (
+                                    <Star className="h-2.5 w-2.5 text-amber-500 fill-amber-500" />
+                                  )}
+                                  <span className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
+                                </div>
                               </div>
                               <p className="font-medium truncate">{p ? `${p.lastName} ${p.firstName}` : "—"}</p>
                               <p className="text-[10px] text-muted-foreground truncate">{m?.name}</p>
@@ -228,6 +244,12 @@ export default function ReservationsPage() {
                             <Badge variant="outline" className="text-[10px]">
                               {r.source === "line" ? "LINE" : r.source === "online" ? "Web" : "来店"}
                             </Badge>
+                            {r.isDesignated && (
+                              <Badge variant="warning" className="text-[10px] gap-0.5">
+                                <Star className="h-2.5 w-2.5 fill-current" />
+                                指名
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-xs text-muted-foreground">
                             {m?.name} ・ {s?.displayName} ・ {m?.durationMinutes}分
@@ -249,7 +271,7 @@ export default function ReservationsPage() {
         <TabsContent value="staff">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {staffList
-              .filter((s) => s.role !== "reception")
+              .filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner")
               .map((s) => {
                 const todayForStaff = todayReservations.filter((r) => r.staffId === s.id);
                 return (

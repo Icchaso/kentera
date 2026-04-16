@@ -44,7 +44,7 @@ interface PatientFiltersProps {
 }
 
 export function PatientFilters({ value, onChange, resultCount, totalCount }: PatientFiltersProps) {
-  const treatingStaff = staffList.filter((s) => s.role !== "reception");
+  const treatingStaff = staffList.filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner");
   const activeFilterCount =
     value.tags.length +
     (value.preferredStaffId !== "all" ? 1 : 0) +

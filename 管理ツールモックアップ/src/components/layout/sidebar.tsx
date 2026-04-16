@@ -13,15 +13,18 @@ import {
   Settings,
   Building2,
   ShieldCheck,
+  Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CureBoardLogo } from "@/components/brand/logo";
+import { useWorkspace } from "@/hooks/use-workspace-store";
+import { filterNavByRole } from "@/lib/role-access";
 
 export type NavItem = {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  group: "main" | "admin";
+  group: "main" | "group" | "admin";
   badge?: string;
 };
 
@@ -34,12 +37,15 @@ export const navItems: NavItem[] = [
   { label: "スタッフ", href: "/staff", icon: UserCog, group: "main" },
   { label: "メニュー", href: "/menus", icon: BookOpen, group: "main" },
   { label: "院設定", href: "/settings", icon: Settings, group: "main" },
+  { label: "店舗比較レポート", href: "/admin/group", icon: Network, group: "group" },
   { label: "テナント管理", href: "/admin/tenants", icon: Building2, group: "admin" },
   { label: "業界分析", href: "/admin/analytics", icon: ShieldCheck, group: "admin" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { currentRole } = useWorkspace();
+  const visible = filterNavByRole(navItems, currentRole);
 
   return (
     <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-slate-800 bg-sidebar text-sidebar-foreground">
@@ -51,14 +57,23 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6 scrollbar-thin">
         <NavSection
           title="治療院業務"
-          items={navItems.filter((n) => n.group === "main")}
+          items={visible.filter((n) => n.group === "main")}
           pathname={pathname}
         />
-        <NavSection
-          title="運営（SuperAdmin）"
-          items={navItems.filter((n) => n.group === "admin")}
-          pathname={pathname}
-        />
+        {visible.some((n) => n.group === "group") && (
+          <NavSection
+            title="グループ管理"
+            items={visible.filter((n) => n.group === "group")}
+            pathname={pathname}
+          />
+        )}
+        {visible.some((n) => n.group === "admin") && (
+          <NavSection
+            title="運営（SuperAdmin）"
+            items={visible.filter((n) => n.group === "admin")}
+            pathname={pathname}
+          />
+        )}
       </nav>
       <div className="p-4 border-t border-slate-800 text-xs text-sidebar-muted">
         <div className="flex items-center justify-between">

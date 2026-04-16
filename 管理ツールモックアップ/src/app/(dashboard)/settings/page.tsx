@@ -139,49 +139,169 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="line">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>LINE公式アカウント連携</CardTitle>
-                  <CardDescription>前日リマインド・再来院促進・ネット予約通知</CardDescription>
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>LINE公式アカウント連携</CardTitle>
+                    <CardDescription>
+                      IDMS が LINE Developers プロバイダーを一括管理。治療院は店頭QRコードを掲示するだけ
+                    </CardDescription>
+                  </div>
+                  <Badge variant="success" className="text-[10px]">
+                    接続済
+                  </Badge>
                 </div>
-                <Badge variant="warning" className="text-[10px]">
-                  近日公開
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 p-4 flex items-start gap-3">
-                <MessageCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">LINE Messaging API に接続</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    LINE Developers で取得した Channel ID / Channel Secret / アクセストークンを入力すると、
-                    <br />
-                    リマインド配信や再来院促進メッセージが自動で送信されるようになります。
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
+                  <MessageCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">なぜ自前構築するのか</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Lステップ等の外部ツールを使わず、LINE Messaging API + LIFF で自前構築。
+                      患者データを CureBoard に一元化し、管理画面とのリアルタイム連携・ビッグデータ収集を実現します。
+                      二重課金もなく、治療院側のコストは SaaS月額のみ。
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Channel ID">
+                    <Input defaultValue="2006789012" readOnly />
+                  </Field>
+                  <Field label="LIFF ID">
+                    <Input defaultValue="2006789012-aBcDeFgH" readOnly />
+                  </Field>
+                  <Field label="Webhook URL" className="col-span-2">
+                    <Input value="https://cureboard.app/api/line/webhook" readOnly />
+                  </Field>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Channel Secret・アクセストークンは IDMS が暗号化保管しています
                   </p>
+                  <Button variant="outline" size="sm" disabled>
+                    QRコード再発行
+                  </Button>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Channel ID">
-                  <Input placeholder="1234567890" disabled />
-                </Field>
-                <Field label="Channel Secret">
-                  <Input type="password" placeholder="••••••••" disabled />
-                </Field>
-                <Field label="チャネルアクセストークン" className="col-span-2">
-                  <Textarea rows={3} placeholder="eyJhbGciOi..." disabled />
-                </Field>
-                <Field label="Webhook URL" className="col-span-2">
-                  <Input value="https://cureboard.app/api/line/webhook/demo" readOnly />
-                </Field>
-              </div>
-              <div className="flex justify-end">
-                <Button disabled>接続テスト</Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>オンボーディングフロー</CardTitle>
+                <CardDescription>治療院側の作業はステップ4のみ。1〜3は IDMS が自動処理</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ol className="space-y-3">
+                  <OnboardStep
+                    num={1}
+                    title="CureBoard に申し込み"
+                    desc="Stripe決済完了でテナント作成"
+                    done
+                  />
+                  <OnboardStep
+                    num={2}
+                    title="IDMS側で自動セットアップ"
+                    desc="LINE Developers チャネル作成 → LIFF 登録 → Webhook設定 → リッチメニュー配置"
+                    done
+                  />
+                  <OnboardStep
+                    num={3}
+                    title="QRコード・ログイン情報を納品"
+                    desc="友だち追加用QRコード / URL と簡易マニュアル"
+                    done
+                  />
+                  <OnboardStep
+                    num={4}
+                    title="店頭にQRコード掲示"
+                    desc="患者が読み取って友だち追加 → 初回登録フォーム（LIFF）"
+                    current
+                  />
+                </ol>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>リッチメニュー</CardTitle>
+                <CardDescription>患者のLINE画面下部に常時表示</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "予約する", desc: "LIFFで空き確認→確定" },
+                    { label: "予約確認", desc: "変更・キャンセル可" },
+                    { label: "回数券残数", desc: "残り回数を表示" },
+                    { label: "次回のご案内", desc: "直近予約を返答" },
+                    { label: "お問い合わせ", desc: "院にテキストチャット" },
+                    { label: "友だち紹介", desc: "クーポン付きで紹介" },
+                  ].map((m) => (
+                    <div
+                      key={m.label}
+                      className="rounded-md border border-border bg-card p-3 text-center hover:border-primary/50 cursor-pointer transition-colors"
+                    >
+                      <p className="text-xs font-semibold">{m.label}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{m.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle>自動配信設定</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Field label="リマインド送信タイミング">
+                    <div className="flex items-center gap-2">
+                      <Input type="number" defaultValue={24} className="w-24" />
+                      <span className="text-sm text-muted-foreground">時間前</span>
+                    </div>
+                  </Field>
+                  <Field label="再来院促進メッセージの送信日数">
+                    <div className="flex items-center gap-2">
+                      <Input type="number" defaultValue={30} className="w-24" />
+                      <span className="text-sm text-muted-foreground">日経過後</span>
+                    </div>
+                  </Field>
+                  <Field label="友だち追加時の挨拶メッセージ">
+                    <Textarea
+                      rows={3}
+                      defaultValue="ご登録ありがとうございます！ご予約・ご質問はリッチメニューからどうぞ。"
+                    />
+                  </Field>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle>通数・プラン</CardTitle>
+                  <CardDescription>LINE通数は SaaS 料金に含む</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded border border-border">
+                    <div>
+                      <p className="text-xs text-muted-foreground">今月の配信数</p>
+                      <p className="text-2xl font-bold text-primary">2,840<span className="text-xs text-muted-foreground ml-1">/ 30,000通</span></p>
+                    </div>
+                    <Badge variant="success" className="text-[10px]">Pro プラン</Badge>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full" style={{ width: "9.5%" }} />
+                  </div>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between"><span className="text-muted-foreground">リマインド</span><span>1,480通</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">再来院促進</span><span>720通</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">誕生日・お知らせ</span><span>640通</span></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -318,5 +438,41 @@ function SecurityRow({ title, desc, enabled }: { title: string; desc: string; en
         {enabled ? "有効" : "無効"}
       </Badge>
     </div>
+  );
+}
+
+function OnboardStep({
+  num,
+  title,
+  desc,
+  done,
+  current,
+}: {
+  num: number;
+  title: string;
+  desc: string;
+  done?: boolean;
+  current?: boolean;
+}) {
+  return (
+    <li className="flex items-start gap-3">
+      <span
+        className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold shrink-0 ${
+          done
+            ? "bg-emerald-500 text-white"
+            : current
+            ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+            : "bg-muted text-muted-foreground"
+        }`}
+      >
+        {done ? "✓" : num}
+      </span>
+      <div className="flex-1 pt-0.5">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
+      {current && <Badge variant="default" className="text-[10px]">進行中</Badge>}
+      {done && <Badge variant="success" className="text-[10px]">完了</Badge>}
+    </li>
   );
 }

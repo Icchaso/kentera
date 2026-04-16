@@ -50,7 +50,7 @@ export default function SalesPage() {
   }, {});
 
   const byStaff = staffList
-    .filter((s) => s.role !== "reception")
+    .filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner")
     .map((s) => {
       const sRes = reservations.filter((r) => r.staffId === s.id && r.status === "paid");
       const sPayments = payments.filter((p) => sRes.some((r) => r.id === p.reservationId));

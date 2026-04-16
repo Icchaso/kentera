@@ -12,22 +12,20 @@ import { staffList, reservations, payments } from "@/lib/data/seed";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
 const ROLE_LABEL: Record<string, string> = {
-  owner: "院長",
-  manager: "マネージャー",
-  staff: "スタッフ",
-  reception: "受付",
+  group_owner: "GroupOwner",
+  owner: "Owner",
+  staff: "Staff",
   superadmin: "SuperAdmin",
 };
 
 const ROLE_VARIANT: Record<string, "default" | "secondary" | "muted" | "warning"> = {
+  group_owner: "default",
   owner: "default",
-  manager: "secondary",
   staff: "muted",
-  reception: "warning",
   superadmin: "default",
 };
 
-const TODAY = new Date("2026-04-15");
+const TODAY = new Date("2026-04-16");
 
 function startOfWeek(d: Date): Date {
   const x = new Date(d);
@@ -68,7 +66,8 @@ export default function StaffPage() {
               const sRes = reservations.filter((r) => r.staffId === s.id && r.status === "paid");
               const sPay = payments.filter((p) => sRes.some((r) => r.id === p.reservationId));
               const revenue = sPay.reduce((sum, p) => sum + p.total, 0);
-              const referralRate = s.role === "reception" ? null : 45 + (s.id.charCodeAt(6) % 40);
+              const isReception = s.roleLabel === "受付";
+              const referralRate = isReception ? null : 45 + (s.id.charCodeAt(6) % 40);
               return (
                 <Card key={s.id}>
                   <CardContent className="p-5">
@@ -137,8 +136,22 @@ export default function StaffPage() {
                       </div>
                     )}
 
-                    {s.role !== "reception" && (
-                      <div className="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-3">
+                    <div className="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-3">
+                      <Stat
+                        label="肩書"
+                        value={s.roleLabel ?? ROLE_LABEL[s.role]}
+                      />
+                      <Stat
+                        label="経験年数"
+                        value={s.yearsOfExperience ? `${s.yearsOfExperience}年` : "—"}
+                      />
+                      <Stat
+                        label="入職日"
+                        value={s.joinedAt ? s.joinedAt.replace(/-/g, "/") : "—"}
+                      />
+                    </div>
+                    {!isReception && (
+                      <div className="mt-3 pt-3 border-t border-border grid grid-cols-3 gap-3">
                         <Stat label="30日売上" value={formatCurrency(revenue)} />
                         <Stat label="施術件数" value={`${sRes.length}件`} />
                         <Stat label="指名率" value={referralRate !== null ? `${referralRate}%` : "—"} />

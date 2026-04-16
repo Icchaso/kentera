@@ -1,5 +1,6 @@
 import type {
   Tenant,
+  TenantGroup,
   Staff,
   Patient,
   Menu,
@@ -9,6 +10,12 @@ import type {
   Coupon,
   AlertItem,
   PatientTag,
+  ChiefComplaint,
+  Modality,
+  RecordCause,
+  RecordOutcome,
+  Occupation,
+  InsuranceType,
 } from "@/types";
 
 // 決定的な擬似乱数（再現性確保）
@@ -37,7 +44,10 @@ const pickMultiple = <T,>(arr: T[], max: number): T[] => {
 };
 
 const TENANT_ID = "tenant-demo-01";
-const NOW = new Date("2026-04-15T09:00:00+09:00");
+const TENANT_ID_2 = "tenant-demo-02";
+const TENANT_ID_3 = "tenant-demo-03";
+const GROUP_ID = "group-demo-01";
+const NOW = new Date("2026-04-16T09:00:00+09:00");
 
 function iso(d: Date): string {
   return d.toISOString();
@@ -57,31 +67,144 @@ function setTime(d: Date, h: number, m: number): Date {
 }
 
 // ================================================
-// Tenant
+// Tenant Group（複数店舗法人）
 // ================================================
-export const tenant: Tenant = {
-  id: TENANT_ID,
-  name: "デモ整骨院",
-  address: "東京都世田谷区三軒茶屋1-2-3 三茶ビル2F",
-  phone: "03-1234-5678",
-  email: "info@demo-seikotsuin.example",
-  businessHours: { open: "09:00", close: "20:00" },
-  closedDays: [0], // 日曜休
-  bedCount: 4,
-  reservationSlotMinutes: 30,
-  logoColor: "#2563eb",
-  plan: "pro",
+export const tenantGroup: TenantGroup = {
+  id: GROUP_ID,
+  name: "デモ整骨院グループ",
+  ownerUserId: "user-group-owner",
+  createdAt: "2025-04-01T00:00:00+09:00",
 };
+
+// ================================================
+// Tenants（3店舗）
+// ================================================
+export const tenants: Tenant[] = [
+  {
+    id: TENANT_ID,
+    groupId: GROUP_ID,
+    branchName: "本院",
+    name: "デモ整骨院 本院",
+    clinicType: "seikotsu",
+    prefecture: "東京都",
+    city: "世田谷区",
+    establishedYear: 2018,
+    address: "東京都世田谷区三軒茶屋1-2-3 三茶ビル2F",
+    phone: "03-1234-5678",
+    email: "honin@demo-seikotsuin.example",
+    businessHours: { open: "09:00", close: "20:00" },
+    closedDays: [0],
+    bedCount: 4,
+    reservationSlotMinutes: 30,
+    logoColor: "#2563eb",
+    plan: "pro",
+  },
+  {
+    id: TENANT_ID_2,
+    groupId: GROUP_ID,
+    branchName: "駅前院",
+    name: "デモ整骨院 駅前院",
+    clinicType: "seikotsu",
+    prefecture: "東京都",
+    city: "世田谷区",
+    establishedYear: 2022,
+    address: "東京都世田谷区太子堂4-5-6 駅前プラザ1F",
+    phone: "03-2345-6789",
+    email: "ekimae@demo-seikotsuin.example",
+    businessHours: { open: "10:00", close: "21:00" },
+    closedDays: [0],
+    bedCount: 3,
+    reservationSlotMinutes: 30,
+    logoColor: "#0ea5e9",
+    plan: "pro",
+  },
+  {
+    id: TENANT_ID_3,
+    groupId: GROUP_ID,
+    branchName: "横浜院",
+    name: "デモ整骨院 横浜院",
+    clinicType: "mixed",
+    prefecture: "神奈川県",
+    city: "横浜市西区",
+    establishedYear: 2024,
+    address: "神奈川県横浜市西区北幸2-1-1 横浜駅西口ビル3F",
+    phone: "045-123-4567",
+    email: "yokohama@demo-seikotsuin.example",
+    businessHours: { open: "09:00", close: "20:00" },
+    closedDays: [0],
+    bedCount: 5,
+    reservationSlotMinutes: 30,
+    logoColor: "#10b981",
+    plan: "pro",
+  },
+];
+
+// 後方互換：tenant として本院を export
+export const tenant: Tenant = tenants[0];
+
+// 店舗別KPI（GroupOwnerの比較レポート用）
+export const branchKpis = [
+  {
+    tenantId: TENANT_ID,
+    monthlyRevenue: 3_800_000,
+    monthlyVisits: 520,
+    newPatients: 28,
+    repeatRate: 74,
+    cancelRate: 3.8,
+    avgTicket: 7_300,
+    staffCount: 4,
+    target: 4_500_000,
+  },
+  {
+    tenantId: TENANT_ID_2,
+    monthlyRevenue: 2_450_000,
+    monthlyVisits: 360,
+    newPatients: 22,
+    repeatRate: 68,
+    cancelRate: 5.1,
+    avgTicket: 6_800,
+    staffCount: 3,
+    target: 3_000_000,
+  },
+  {
+    tenantId: TENANT_ID_3,
+    monthlyRevenue: 1_680_000,
+    monthlyVisits: 245,
+    newPatients: 31,
+    repeatRate: 58,
+    cancelRate: 6.4,
+    avgTicket: 6_850,
+    staffCount: 3,
+    target: 2_200_000,
+  },
+];
 
 // ================================================
 // Staff
 // ================================================
 export const staffList: Staff[] = [
   {
+    id: "staff-00",
+    tenantId: TENANT_ID, // GroupOwner の所属は本院
+    displayName: "代表 藤原 俊介",
+    role: "group_owner",
+    roleLabel: "グループ代表",
+    email: "fujiwara@demo.example",
+    qualifications: [
+      { name: "柔道整復師", licenseNumber: "JU-00001", expiresAt: "2028-03-31" },
+    ],
+    specialties: ["経営", "スポーツ外傷"],
+    color: "#7c3aed",
+    yearsOfExperience: 22,
+    joinedAt: "2005-04-01",
+    isActive: true,
+  },
+  {
     id: "staff-01",
     tenantId: TENANT_ID,
     displayName: "山田 健一",
     role: "owner",
+    roleLabel: "本院 院長",
     email: "yamada@demo.example",
     qualifications: [
       { name: "柔道整復師", licenseNumber: "JU-12345", expiresAt: "2028-03-31" },
@@ -89,6 +212,8 @@ export const staffList: Staff[] = [
     ],
     specialties: ["骨盤矯正", "スポーツ外傷", "鍼灸"],
     color: "#2563eb",
+    yearsOfExperience: 15,
+    joinedAt: "2018-04-01",
     isActive: true,
     monthlyTarget: 1_200_000,
   },
@@ -96,11 +221,14 @@ export const staffList: Staff[] = [
     id: "staff-02",
     tenantId: TENANT_ID,
     displayName: "佐藤 美咲",
-    role: "manager",
+    role: "staff",
+    roleLabel: "副院長",
     email: "sato@demo.example",
     qualifications: [{ name: "柔道整復師", licenseNumber: "JU-23456", expiresAt: "2027-09-30" }],
     specialties: ["産後ケア", "骨盤矯正", "小顔矯正"],
     color: "#0ea5e9",
+    yearsOfExperience: 9,
+    joinedAt: "2019-07-15",
     isActive: true,
     monthlyTarget: 900_000,
   },
@@ -109,10 +237,13 @@ export const staffList: Staff[] = [
     tenantId: TENANT_ID,
     displayName: "鈴木 拓海",
     role: "staff",
+    roleLabel: "施術者",
     email: "suzuki@demo.example",
     qualifications: [{ name: "柔道整復師", licenseNumber: "JU-34567", expiresAt: "2029-01-31" }],
     specialties: ["肩こり・腰痛", "スポーツ外傷"],
     color: "#10b981",
+    yearsOfExperience: 4,
+    joinedAt: "2022-04-01",
     isActive: true,
     monthlyTarget: 700_000,
   },
@@ -120,11 +251,14 @@ export const staffList: Staff[] = [
     id: "staff-04",
     tenantId: TENANT_ID,
     displayName: "田中 葵",
-    role: "reception",
+    role: "staff",
+    roleLabel: "受付",
     email: "tanaka@demo.example",
     qualifications: [],
     specialties: [],
     color: "#f59e0b",
+    yearsOfExperience: 2,
+    joinedAt: "2024-04-01",
     isActive: true,
   },
 ];
@@ -152,7 +286,19 @@ const FIRST_NAMES_M = ["大輔", "翔", "健", "翼", "陸", "颯太", "蓮", "�
 const FIRST_NAMES_M_KANA = ["ダイスケ", "ショウ", "ケン", "ツバサ", "リク", "ソウタ", "レン", "ミナト", "ユウマ", "カイト"];
 const FIRST_NAMES_F = ["優奈", "美咲", "結菜", "葵", "陽菜", "さくら", "美月", "凛", "愛莉", "芽生"];
 const FIRST_NAMES_F_KANA = ["ユウナ", "ミサキ", "ユイナ", "アオイ", "ヒナ", "サクラ", "ミヅキ", "リン", "アイリ", "メイ"];
-const OCCUPATIONS = ["会社員", "主婦", "自営業", "看護師", "教員", "エンジニア", "学生", "公務員", "介護士", "営業職", "フリーランス", "退職"];
+const OCCUPATION_DISTRIBUTION: { enum: Occupation; label: string }[] = [
+  { enum: "desk_work", label: "デスクワーク" },
+  { enum: "desk_work", label: "会社員" },
+  { enum: "standing", label: "販売員" },
+  { enum: "physical_labor", label: "建設作業員" },
+  { enum: "physical_labor", label: "介護士" },
+  { enum: "athlete", label: "アスリート" },
+  { enum: "student", label: "学生" },
+  { enum: "homemaker", label: "主婦" },
+  { enum: "retired", label: "退職" },
+  { enum: "other", label: "自営業" },
+  { enum: "other", label: "フリーランス" },
+];
 const ALL_TAGS: PatientTag[] = ["VIP", "紹介", "保険", "自費", "要観察"];
 const REFERRAL_SOURCES: Patient["referralSource"][] = ["web", "flyer", "sns", "referral", "walk_in", "other"];
 
@@ -164,12 +310,11 @@ export const patients: Patient[] = Array.from({ length: 50 }, (_, i) => {
   const lastNameKana = LAST_NAMES_KANA[lnIdx];
   const firstName = gender === "male" ? FIRST_NAMES_M[fnIdx] : FIRST_NAMES_F[fnIdx];
   const firstNameKana = gender === "male" ? FIRST_NAMES_M_KANA[fnIdx] : FIRST_NAMES_F_KANA[fnIdx];
-  const age = 20 + Math.floor(rand() * 60); // 20〜79
+  const age = 20 + Math.floor(rand() * 60);
   const birthYear = NOW.getFullYear() - age;
   const birthDate = `${birthYear}-${String(Math.floor(rand() * 12) + 1).padStart(2, "0")}-${String(Math.floor(rand() * 28) + 1).padStart(2, "0")}`;
-  const firstVisitDaysAgo = 30 + Math.floor(rand() * 720); // 1ヶ月〜2年前
+  const firstVisitDaysAgo = 30 + Math.floor(rand() * 720);
   const firstVisitDate = dateOnly(addDays(NOW, -firstVisitDaysAgo));
-  // 離脱対象は約16%（8名）
   const isDropout = i < 8;
   const lastVisitDaysAgo = isDropout
     ? 60 + Math.floor(rand() * 90)
@@ -178,11 +323,10 @@ export const patients: Patient[] = Array.from({ length: 50 }, (_, i) => {
   const totalVisits = isDropout ? 2 + Math.floor(rand() * 8) : 5 + Math.floor(rand() * 30);
   const totalSpent = totalVisits * (2000 + Math.floor(rand() * 6000));
   const tags = pickMultiple(ALL_TAGS, 2);
-  // 60%にLINE連携
   const lineLinked = rand() < 0.6;
-  // 家族リンク（10%）
   const hasFamily = rand() < 0.1;
   const preferredStaffId = pick(["staff-01", "staff-02", "staff-03"]);
+  const occ = pick(OCCUPATION_DISTRIBUTION);
 
   return {
     id: `patient-${String(i + 1).padStart(3, "0")}`,
@@ -198,7 +342,8 @@ export const patients: Patient[] = Array.from({ length: 50 }, (_, i) => {
     email: rand() < 0.7 ? `${lastNameKana.toLowerCase()}${i}@example.com` : undefined,
     postalCode: `154-00${String(Math.floor(rand() * 90) + 10)}`,
     address: "東京都世田谷区三軒茶屋" + (Math.floor(rand() * 5) + 1) + "-" + (Math.floor(rand() * 30) + 1),
-    occupation: pick(OCCUPATIONS),
+    occupation: occ.enum,
+    occupationLabel: occ.label,
     referralSource: pick(REFERRAL_SOURCES),
     medicalHistory: rand() < 0.3 ? pick(["高血圧", "糖尿病境界型", "椎間板ヘルニア既往", "喘息"]) : undefined,
     allergies: rand() < 0.15 ? pick(["花粉", "そば", "ラテックス"]) : undefined,
@@ -218,7 +363,7 @@ export const patients: Patient[] = Array.from({ length: 50 }, (_, i) => {
 });
 
 // ================================================
-// Reservations — 過去3ヶ月＋向こう1週間
+// Reservations
 // ================================================
 function generateReservations(): Reservation[] {
   const out: Reservation[] = [];
@@ -231,10 +376,9 @@ function generateReservations(): Reservation[] {
   while (cursor <= END) {
     const dow = cursor.getDay();
     if (dow !== 0) {
-      // 月〜土は10〜25件／日
       const dailyCount = 10 + Math.floor(rand() * 16);
       for (let i = 0; i < dailyCount; i++) {
-        const hour = 9 + Math.floor(rand() * 10); // 9〜18
+        const hour = 9 + Math.floor(rand() * 10);
         const minute = rand() < 0.5 ? 0 : 30;
         const start = setTime(cursor, hour, minute);
         const menu = pick(menus.filter((m) => m.category !== "product"));
@@ -249,6 +393,8 @@ function generateReservations(): Reservation[] {
           : rand() < 0.03
           ? "no_show"
           : "paid";
+        // 指名予約率 約55%
+        const isDesignated = rand() < 0.55;
         out.push({
           id: `res-${String(idCounter++).padStart(5, "0")}`,
           tenantId: TENANT_ID,
@@ -261,6 +407,7 @@ function generateReservations(): Reservation[] {
           cancelReason: status === "cancelled" ? pick(["体調不良", "急な予定", "その他"]) : undefined,
           reminderSentAt: !isFuture ? iso(addDays(start, -1)) : undefined,
           source: pick(["manual", "online", "line"] as const),
+          isDesignated,
           notes: undefined,
           createdAt: iso(addDays(start, -(Math.floor(rand() * 14) + 1))),
         });
@@ -273,14 +420,18 @@ function generateReservations(): Reservation[] {
 export const reservations: Reservation[] = generateReservations();
 
 // ================================================
-// Payments — 完了（paid）予約に対して作成
+// Payments
 // ================================================
+const INSURANCE_TYPES: InsuranceType[] = ["health", "workers_comp", "auto_liability", "life", "none"];
+
 export const payments: Payment[] = reservations
   .filter((r) => r.status === "paid")
   .map((r, i) => {
     const menu = menus.find((m) => m.id === r.menuId)!;
     const subtotal = menu.price;
-    const tax = 0; // 税込価格とする
+    const tax = 0;
+    const method = pick(["cash", "credit", "qr", "coupon"] as const);
+    const isInsuranceMenu = menu.category === "insurance";
     return {
       id: `pay-${String(i + 1).padStart(5, "0")}`,
       tenantId: TENANT_ID,
@@ -292,14 +443,15 @@ export const payments: Payment[] = reservations
           name: menu.name,
           price: menu.price,
           quantity: 1,
-          isInsurance: menu.category === "insurance",
+          isInsurance: isInsuranceMenu,
         },
       ],
       subtotal,
       discount: 0,
       tax,
       total: subtotal + tax,
-      paymentMethod: pick(["cash", "credit", "qr", "coupon"] as const),
+      paymentMethod: method,
+      insuranceType: isInsuranceMenu ? pick(INSURANCE_TYPES.filter((t) => t !== "none")) : "none",
       receiptNumber: `R-${String(i + 1).padStart(6, "0")}`,
       paidAt: r.endAt,
     };
@@ -312,9 +464,14 @@ const SOAP_S = ["肩が重だるい", "腰に違和感", "膝が痛む", "朝起
 const SOAP_O = ["僧帽筋の緊張あり", "腰部可動域制限", "膝関節の腫れ軽度", "頸椎アライメント乱れ", "骨盤前傾姿勢", "下腿三頭筋短縮"];
 const SOAP_A = ["慢性肩こり", "腰痛症", "変形性膝関節症疑い", "頸肩腕症候群", "骨盤ゆがみ", "スポーツ外傷（軽度）"];
 const SOAP_P = ["週2回の施術を4週継続", "骨盤矯正導入", "ストレッチ指導", "鍼灸併用で継続観察", "セルフケアを自宅実施", "次回2週間後"];
+const ALL_COMPLAINTS: ChiefComplaint[] = ["肩こり", "腰痛", "膝痛", "首痛", "頭痛", "骨盤ゆがみ", "スポーツ外傷", "ヘルニア", "五十肩", "坐骨神経痛", "四十肩", "股関節痛"];
+const ALL_MODALITIES: Modality[] = ["手技", "超音波", "電気", "鍼", "灸", "テーピング", "矯正", "運動療法", "牽引", "温熱"];
+const CAUSES: RecordCause[] = ["daily_life", "sports", "work", "accident", "aging", "postpartum", "other"];
+const OUTCOMES: RecordOutcome[] = ["improving", "recovered", "maintenance", "discontinued", "referred"];
+const TREATMENT_AREAS = ["肩", "腰", "膝", "首", "股関節", "足首", "肘", "手首"];
 
 export const medicalRecords: MedicalRecord[] = patients.flatMap((p) => {
-  const count = 2 + Math.floor(rand() * 7); // 2〜8件
+  const count = 2 + Math.floor(rand() * 7);
   const patientReservations = reservations
     .filter((r) => r.patientId === p.id && r.status === "paid")
     .slice(0, count);
@@ -328,6 +485,11 @@ export const medicalRecords: MedicalRecord[] = patients.flatMap((p) => {
     soapO: pick(SOAP_O),
     soapA: pick(SOAP_A),
     soapP: pick(SOAP_P),
+    chiefComplaints: pickMultiple(ALL_COMPLAINTS, 2),
+    modalities: pickMultiple(ALL_MODALITIES, 3),
+    cause: pick(CAUSES),
+    outcome: pick(OUTCOMES),
+    treatmentAreas: pickMultiple(TREATMENT_AREAS, 2),
     painScale: Math.floor(rand() * 10) + 1,
     isFirstVisit: idx === 0,
     recordedAt: r.endAt,
@@ -335,11 +497,11 @@ export const medicalRecords: MedicalRecord[] = patients.flatMap((p) => {
 });
 
 // ================================================
-// Coupons — 10件
+// Coupons
 // ================================================
 export const coupons: Coupon[] = Array.from({ length: 10 }, (_, i) => {
   const patient = patients[i * 3];
-  const total = 5 + Math.floor(rand() * 6); // 5〜10回
+  const total = 5 + Math.floor(rand() * 6);
   const used = i < 3 ? total : i < 6 ? Math.floor(total * 0.6) : Math.floor(total * 0.2);
   const daysToExpire = i === 7 ? -20 : i === 6 ? 10 : 60 + Math.floor(rand() * 200);
   const status: Coupon["status"] = daysToExpire < 0 ? "expired" : used >= total ? "fully_used" : "active";
@@ -365,7 +527,7 @@ export const alerts: AlertItem[] = [
     id: `alert-dropout-${p.id}`,
     type: "dropout",
     title: `${p.lastName} ${p.firstName} 様が離脱傾向`,
-    detail: `最終来院から ${Math.floor((NOW.getTime() - new Date(p.lastVisitDate).getTime()) / (86400_000))} 日経過`,
+    detail: `最終来院から ${Math.floor((NOW.getTime() - new Date(p.lastVisitDate).getTime()) / 86400_000)} 日経過`,
     patientId: p.id,
     severity: "warning",
     createdAt: iso(NOW),
@@ -397,7 +559,9 @@ export const alerts: AlertItem[] = [
   },
 ];
 
-// helper: 集計
+// ================================================
+// 集計関数
+// ================================================
 export function getMonthlyRevenue(): { month: string; revenue: number }[] {
   const map = new Map<string, number>();
   payments.forEach((p) => {
@@ -478,6 +642,9 @@ export function getKpis() {
   const newPatients30 = patients.filter((p) => daysAgo(p.firstVisitDate) <= 30).length;
   const repeatRate = 72;
   const utilization = 68;
+  const designatedRate = Math.round(
+    (reservations.filter((r) => r.isDesignated).length / reservations.length) * 100
+  );
   return {
     newPatients30,
     repeatRate,
@@ -486,6 +653,7 @@ export function getKpis() {
     utilization,
     totalRevenue30,
     totalVisits30,
+    designatedRate,
   };
 }
 
@@ -495,7 +663,7 @@ function daysAgo(isoDate: string): number {
 
 export function getStaffRanking() {
   return staffList
-    .filter((s) => s.role !== "reception")
+    .filter((s) => s.role !== "group_owner" && s.roleLabel !== "受付")
     .map((s) => {
       const sPayments = payments.filter((p) => {
         const res = reservations.find((r) => r.id === p.reservationId);
@@ -503,11 +671,14 @@ export function getStaffRanking() {
       });
       const revenue = sPayments.reduce((sum, p) => sum + p.total, 0);
       const count = sPayments.length;
+      const designated = reservations.filter((r) => r.staffId === s.id && r.isDesignated).length;
+      const total = reservations.filter((r) => r.staffId === s.id).length;
+      const referralRate = total === 0 ? 0 : Math.round((designated / total) * 100);
       return {
         staff: s,
         revenue,
         treatmentCount: count,
-        referralRate: 40 + Math.floor(rand() * 40),
+        referralRate,
       };
     })
     .sort((a, b) => b.revenue - a.revenue);
