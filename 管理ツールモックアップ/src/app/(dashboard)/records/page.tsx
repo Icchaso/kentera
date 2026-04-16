@@ -16,7 +16,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/layout/page-header";
-import { medicalRecords, patients, staffList } from "@/lib/data/seed";
+import { medicalRecords, patients, staffList, scopeByTenant } from "@/lib/data/seed";
+import { useWorkspace } from "@/hooks/use-workspace-store";
 import { cn, formatDate } from "@/lib/utils";
 
 const CAUSE_LABEL: Record<string, string> = {
@@ -46,11 +47,17 @@ const OUTCOME_VARIANT: Record<string, "default" | "success" | "warning" | "muted
 };
 
 export default function RecordsPage() {
+  const { currentTenantId } = useWorkspace();
   const [keyword, setKeyword] = React.useState("");
   const [complaintFilter, setComplaintFilter] = React.useState<string | null>(null);
 
+  const scopedRecords = React.useMemo(
+    () => scopeByTenant(medicalRecords, currentTenantId),
+    [currentTenantId]
+  );
+
   const filtered = React.useMemo(() => {
-    const sorted = [...medicalRecords].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
+    const sorted = [...scopedRecords].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
     return sorted.filter((r) => {
       if (complaintFilter && !r.chiefComplaints.includes(complaintFilter as never)) return false;
       if (keyword) {
@@ -61,46 +68,46 @@ export default function RecordsPage() {
       }
       return true;
     });
-  }, [keyword, complaintFilter]);
+  }, [keyword, complaintFilter, scopedRecords]);
 
   const recent = filtered.slice(0, 50);
 
   const complaintCounts = React.useMemo(() => {
     const map = new Map<string, number>();
-    medicalRecords.forEach((r) => r.chiefComplaints.forEach((c) => map.set(c, (map.get(c) ?? 0) + 1)));
+    scopedRecords.forEach((r) => r.chiefComplaints.forEach((c) => map.set(c, (map.get(c) ?? 0) + 1)));
     return Array.from(map.entries())
       .sort(([, a], [, b]) => b - a)
       .slice(0, 8);
-  }, []);
+  }, [scopedRecords]);
 
   const modalityCounts = React.useMemo(() => {
     const map = new Map<string, number>();
-    medicalRecords.forEach((r) => r.modalities.forEach((m) => map.set(m, (map.get(m) ?? 0) + 1)));
+    scopedRecords.forEach((r) => r.modalities.forEach((m) => map.set(m, (map.get(m) ?? 0) + 1)));
     return Array.from(map.entries()).sort(([, a], [, b]) => b - a);
-  }, []);
+  }, [scopedRecords]);
 
   const outcomeCounts = React.useMemo(() => {
     const map = new Map<string, number>();
-    medicalRecords.forEach((r) => {
+    scopedRecords.forEach((r) => {
       if (r.outcome) map.set(r.outcome, (map.get(r.outcome) ?? 0) + 1);
     });
     return Array.from(map.entries());
-  }, []);
+  }, [scopedRecords]);
 
   const painDist = React.useMemo(() => {
     const buckets = [0, 0, 0, 0, 0];
-    medicalRecords.forEach((r) => {
+    scopedRecords.forEach((r) => {
       const b = Math.min(4, Math.floor((r.painScale - 1) / 2));
       buckets[b]++;
     });
     return buckets;
-  }, []);
+  }, [scopedRecords]);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <PageHeader
         title="カルテ管理"
-        description={`電子カルテ ${medicalRecords.length}件・SOAP + 主訴・施術手技・転帰まで構造化記録`}
+        description={`電子カルテ ${scopedRecords.length}件・SOAP + 主訴・施術手技・転帰まで構造化記録`}
         actions={
           <Button>
             <Plus className="h-4 w-4" />
@@ -113,14 +120,14 @@ export default function RecordsPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">総カルテ数</p>
-            <p className="text-2xl font-bold">{medicalRecords.length}</p>
+            <p className="text-2xl font-bold">{scopedRecords.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">今月の記録</p>
             <p className="text-2xl font-bold">
-              {medicalRecords.filter((r) => r.recordedAt.startsWith("2026-04")).length}
+              {scopedRecords.filter((r) => r.recordedAt.startsWith("2026-04")).length}
             </p>
           </CardContent>
         </Card>
@@ -128,7 +135,7 @@ export default function RecordsPage() {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">初診カルテ</p>
             <p className="text-2xl font-bold text-primary">
-              {medicalRecords.filter((r) => r.isFirstVisit).length}
+              {scopedRecords.filter((r) => r.isFirstVisit).length}
             </p>
           </CardContent>
         </Card>
@@ -136,7 +143,7 @@ export default function RecordsPage() {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">平均痛みスケール</p>
             <p className="text-2xl font-bold">
-              {(medicalRecords.reduce((s, r) => s + r.painScale, 0) / Math.max(medicalRecords.length, 1)).toFixed(1)}
+              {(scopedRecords.reduce((s, r) => s + r.painScale, 0) / Math.max(scopedRecords.length, 1)).toFixed(1)}
               <span className="text-xs text-muted-foreground">/10</span>
             </p>
           </CardContent>

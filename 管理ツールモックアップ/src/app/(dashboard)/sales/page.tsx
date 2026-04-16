@@ -16,7 +16,8 @@ import {
 import { PageHeader } from "@/components/layout/page-header";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { payments, menus, staffList, reservations, getDailyRevenueLast30, getKpis } from "@/lib/data/seed";
+import { payments, menus, staffList, reservations, tenants, tenantGroup, scopeByTenant, getDailyRevenueLast30, getKpis } from "@/lib/data/seed";
+import { useWorkspace } from "@/hooks/use-workspace-store";
 import { cn, formatCurrency } from "@/lib/utils";
 
 const METHOD_LABEL: Record<string, string> = {
@@ -29,58 +30,79 @@ const METHOD_LABEL: Record<string, string> = {
 };
 
 export default function SalesPage() {
-  const daily = getDailyRevenueLast30();
-  const kpi = getKpis();
+  const { currentTenantId } = useWorkspace();
+  const daily = getDailyRevenueLast30(currentTenantId);
+  const kpi = getKpis(currentTenantId);
   const total30 = kpi.totalRevenue30;
 
-  const byMenu = menus
+  const scopedPayments = scopeByTenant(payments, currentTenantId);
+  const scopedReservations = scopeByTenant(reservations, currentTenantId);
+  const scopedMenus = scopeByTenant(menus, currentTenantId);
+  const scopedStaff =
+    currentTenantId === "all" ? staffList : staffList.filter((s) => s.tenantId === currentTenantId);
+  const currentTenant = tenants.find((t) => t.id === currentTenantId);
+  const scopeLabel =
+    currentTenantId === "all"
+      ? `${tenantGroup.name}（全${tenants.length}店舗集計）`
+      : currentTenant?.name ?? "—";
+
+  const byMenu = scopedMenus
     .map((m) => {
-      const items = payments.flatMap((p) => p.items.filter((i) => i.menuId === m.id));
+      const items = scopedPayments.flatMap((p) => p.items.filter((i) => i.menuId === m.id));
       const revenue = items.reduce((s, i) => s + i.price * i.quantity, 0);
       return { menu: m, revenue, count: items.length };
     })
     .filter((x) => x.revenue > 0)
     .sort((a, b) => b.revenue - a.revenue);
 
-  const byMethod = payments.reduce<Record<string, { count: number; total: number }>>((acc, p) => {
+  const byMethod = scopedPayments.reduce<Record<string, { count: number; total: number }>>((acc, p) => {
     acc[p.paymentMethod] = acc[p.paymentMethod] ?? { count: 0, total: 0 };
     acc[p.paymentMethod].count++;
     acc[p.paymentMethod].total += p.total;
     return acc;
   }, {});
 
-  const byStaff = staffList
+  const byStaff = scopedStaff
     .filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner")
     .map((s) => {
-      const sRes = reservations.filter((r) => r.staffId === s.id && r.status === "paid");
-      const sPayments = payments.filter((p) => sRes.some((r) => r.id === p.reservationId));
+      const sRes = scopedReservations.filter((r) => r.staffId === s.id && r.status === "paid");
+      const sPayments = scopedPayments.filter((p) => sRes.some((r) => r.id === p.reservationId));
       const revenue = sPayments.reduce((sum, p) => sum + p.total, 0);
       const target = s.monthlyTarget ?? 0;
       return { staff: s, revenue, count: sRes.length, target };
     })
     .sort((a, b) => b.revenue - a.revenue);
 
-  const latestPayments = [...payments].sort((a, b) => b.paidAt.localeCompare(a.paidAt)).slice(0, 10);
+  const latestPayments = [...scopedPayments].sort((a, b) => b.paidAt.localeCompare(a.paidAt)).slice(0, 10);
 
+  const expenseMultiplier =
+    currentTenantId === "all" ? 3 : currentTenantId === "tenant-demo-02" ? 0.7 : currentTenantId === "tenant-demo-03" ? 0.5 : 1;
   const expenses = [
-    { cat: "家賃", amount: 280_000 },
-    { cat: "光熱費", amount: 38_000 },
-    { cat: "人件費", amount: 1_450_000 },
-    { cat: "消耗品", amount: 42_000 },
-    { cat: "広告費", amount: 120_000 },
-    { cat: "設備", amount: 55_000 },
+    { cat: "家賃", amount: Math.round(280_000 * expenseMultiplier) },
+    { cat: "光熱費", amount: Math.round(38_000 * expenseMultiplier) },
+    { cat: "人件費", amount: Math.round(1_450_000 * expenseMultiplier) },
+    { cat: "消耗品", amount: Math.round(42_000 * expenseMultiplier) },
+    { cat: "広告費", amount: Math.round(120_000 * expenseMultiplier) },
+    { cat: "設備", amount: Math.round(55_000 * expenseMultiplier) },
   ];
   const totalExpense = expenses.reduce((s, e) => s + e.amount, 0);
   const profit = total30 - totalExpense;
 
-  const monthlyTarget = 4_500_000;
-  const targetRate = Math.round((total30 / monthlyTarget) * 100);
+  const monthlyTarget =
+    currentTenantId === "all"
+      ? 9_700_000
+      : currentTenantId === "tenant-demo-01"
+      ? 4_500_000
+      : currentTenantId === "tenant-demo-02"
+      ? 3_000_000
+      : 2_200_000;
+  const targetRate = total30 === 0 ? 0 : Math.round((total30 / monthlyTarget) * 100);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <PageHeader
         title="売上・会計"
-        description="日次から月次まで、経営の数字をひと目で"
+        description={`${scopeLabel}・日次から月次まで経営の数字をひと目で`}
         actions={
           <>
             <Button variant="outline" disabled>

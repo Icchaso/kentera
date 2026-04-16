@@ -7,17 +7,31 @@ import { PatientFilters, DEFAULT_FILTERS, type PatientFiltersState } from "@/com
 import { PatientTable, type SortKey, type SortDir } from "@/components/patients/patient-table";
 import { PatientFormDialog } from "@/components/patients/patient-form-dialog";
 import { usePatientsStore } from "@/hooks/use-patients-store";
+import { useWorkspace } from "@/hooks/use-workspace-store";
+import { tenants, tenantGroup } from "@/lib/data/seed";
 import type { Patient } from "@/types";
 
 const PAGE_SIZE = 20;
 
 export default function PatientsPage() {
-  const { patients } = usePatientsStore();
+  const { patients: allPatients } = usePatientsStore();
+  const { currentTenantId } = useWorkspace();
   const [filters, setFilters] = React.useState<PatientFiltersState>(DEFAULT_FILTERS);
   const [sortKey, setSortKey] = React.useState<SortKey>("lastVisit");
   const [sortDir, setSortDir] = React.useState<SortDir>("desc");
   const [page, setPage] = React.useState(1);
   const [formOpen, setFormOpen] = React.useState(false);
+
+  const patients = React.useMemo(
+    () => (currentTenantId === "all" ? allPatients : allPatients.filter((p) => p.tenantId === currentTenantId)),
+    [allPatients, currentTenantId]
+  );
+
+  const currentTenant = tenants.find((t) => t.id === currentTenantId);
+  const scopeLabel =
+    currentTenantId === "all"
+      ? `${tenantGroup.name}（全${tenants.length}店舗）`
+      : currentTenant?.name ?? "—";
 
   const filtered = React.useMemo(() => {
     return applyFilters(patients, filters);
@@ -54,7 +68,7 @@ export default function PatientsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">患者管理</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            登録 {patients.length} 名・離脱アラート対象 {patients.filter((p) => daysAgo(p.lastVisitDate) >= 60).length} 名
+            {scopeLabel}・登録 {patients.length} 名・離脱アラート対象 {patients.filter((p) => daysAgo(p.lastVisitDate) >= 60).length} 名
           </p>
         </div>
         <Button onClick={() => setFormOpen(true)}>

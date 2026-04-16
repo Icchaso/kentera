@@ -14,6 +14,8 @@ import {
   Building2,
   ShieldCheck,
   Network,
+  MessageCircle,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CureBoardLogo } from "@/components/brand/logo";
@@ -36,6 +38,8 @@ export const navItems: NavItem[] = [
   { label: "売上", href: "/sales", icon: Coins, group: "main" },
   { label: "スタッフ", href: "/staff", icon: UserCog, group: "main" },
   { label: "メニュー", href: "/menus", icon: BookOpen, group: "main" },
+  { label: "院内メッセージ", href: "/messages", icon: MessageCircle, group: "main" },
+  { label: "AI経営分析", href: "/insights", icon: Sparkles, group: "main", badge: "AI" },
   { label: "院設定", href: "/settings", icon: Settings, group: "main" },
   { label: "店舗比較レポート", href: "/admin/group", icon: Network, group: "group" },
   { label: "テナント管理", href: "/admin/tenants", icon: Building2, group: "admin" },

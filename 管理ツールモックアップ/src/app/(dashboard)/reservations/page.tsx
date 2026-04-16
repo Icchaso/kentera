@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/layout/page-header";
-import { reservations, patients, staffList, menus, tenant } from "@/lib/data/seed";
+import { reservations, patients, staffList, menus, tenants, tenantGroup, scopeByTenant } from "@/lib/data/seed";
+import { useWorkspace } from "@/hooks/use-workspace-store";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
 const TODAY = new Date("2026-04-16");
@@ -40,6 +41,7 @@ function startOfWeek(d: Date): Date {
 }
 
 export default function ReservationsPage() {
+  const { currentTenantId } = useWorkspace();
   const [baseDate, setBaseDate] = React.useState(TODAY);
   const weekStart = React.useMemo(() => startOfWeek(baseDate), [baseDate]);
   const days = React.useMemo(
@@ -47,19 +49,38 @@ export default function ReservationsPage() {
     [weekStart]
   );
 
-  const todayReservations = reservations
+  const scopedReservations = scopeByTenant(reservations, currentTenantId);
+  const scopedStaff =
+    currentTenantId === "all"
+      ? staffList
+      : staffList.filter((s) => s.tenantId === currentTenantId);
+  const currentTenant = tenants.find((t) => t.id === currentTenantId);
+  const scopeLabel =
+    currentTenantId === "all"
+      ? `${tenantGroup.name}（全${tenants.length}店舗）`
+      : currentTenant?.name ?? "—";
+  const bedTotal =
+    currentTenantId === "all"
+      ? tenants.reduce((s, t) => s + t.bedCount, 0)
+      : currentTenant?.bedCount ?? 0;
+
+  const todayReservations = scopedReservations
     .filter((r) => sameDay(new Date(r.startAt), TODAY))
     .sort((a, b) => a.startAt.localeCompare(b.startAt));
 
   const todayCount = todayReservations.length;
   const todayPaid = todayReservations.filter((r) => r.status === "paid").length;
   const todayCancelled = todayReservations.filter((r) => r.status === "cancelled").length;
+  const designatedRate =
+    scopedReservations.length === 0
+      ? 0
+      : Math.round((scopedReservations.filter((r) => r.isDesignated).length / scopedReservations.length) * 100);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <PageHeader
         title="予約管理"
-        description={`${tenant.name}・施術者${staffList.filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner").length}名・ベッド${tenant.bedCount}台`}
+        description={`${scopeLabel}・施術者${scopedStaff.filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner").length}名・ベッド${bedTotal}台`}
         actions={
           <>
             <Button variant="outline" disabled>
@@ -100,7 +121,7 @@ export default function ReservationsPage() {
               指名予約率
             </p>
             <p className="text-2xl font-bold text-amber-600">
-              {Math.round((reservations.filter((r) => r.isDesignated).length / reservations.length) * 100)}%
+              {designatedRate}%
             </p>
           </CardContent>
         </Card>
@@ -152,7 +173,7 @@ export default function ReservationsPage() {
             <CardContent className="overflow-x-auto scrollbar-thin">
               <div className="grid grid-cols-6 gap-2 min-w-[900px]">
                 {days.map((d) => {
-                  const dayRes = reservations
+                  const dayRes = scopedReservations
                     .filter((r) => sameDay(new Date(r.startAt), d))
                     .sort((a, b) => a.startAt.localeCompare(b.startAt));
                   const isToday = sameDay(d, TODAY);
@@ -270,7 +291,7 @@ export default function ReservationsPage() {
 
         <TabsContent value="staff">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {staffList
+            {scopedStaff
               .filter((s) => s.roleLabel !== "受付" && s.role !== "group_owner")
               .map((s) => {
                 const todayForStaff = todayReservations.filter((r) => r.staffId === s.id);

@@ -1,3 +1,5 @@
+"use client";
+
 import {
   getTodayStats,
   getKpis,
@@ -8,7 +10,11 @@ import {
   alerts,
   reservations,
   patients,
+  tenants,
+  tenantGroup,
+  scopeByTenant,
 } from "@/lib/data/seed";
+import { useWorkspace } from "@/hooks/use-workspace-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -27,26 +33,55 @@ import {
   XCircle,
   Activity,
   MessageSquareText,
+  Network,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import Link from "next/link";
 
-export default function DashboardPage() {
-  const today = getTodayStats();
-  const kpi = getKpis();
-  const daily = getDailyRevenueLast30();
-  const heatmap = getHeatmap();
-  const flow = getPatientFlow();
-  const ranking = getStaffRanking();
+const TODAY = new Date("2026-04-16");
 
-  const todayReservations = reservations
-    .filter((r) => r.startAt.slice(0, 10) === new Date("2026-04-15").toISOString().slice(0, 10))
+export default function DashboardPage() {
+  const { currentTenantId } = useWorkspace();
+  const today = getTodayStats(currentTenantId);
+  const kpi = getKpis(currentTenantId);
+  const daily = getDailyRevenueLast30(currentTenantId);
+  const heatmap = getHeatmap(currentTenantId);
+  const flow = getPatientFlow(currentTenantId);
+  const ranking = getStaffRanking(currentTenantId);
+
+  const scopedReservations = scopeByTenant(reservations, currentTenantId);
+  const scopedPatients = scopeByTenant(patients, currentTenantId);
+  const scopedAlerts =
+    currentTenantId === "all"
+      ? alerts
+      : alerts.filter((a) => {
+          if (!a.patientId) return true; // グループ共通アラートは表示
+          const p = patients.find((x) => x.id === a.patientId);
+          return p?.tenantId === currentTenantId;
+        });
+
+  const todayReservations = scopedReservations
+    .filter((r) => r.startAt.slice(0, 10) === TODAY.toISOString().slice(0, 10))
     .sort((a, b) => a.startAt.localeCompare(b.startAt))
     .slice(0, 6);
 
-  const monthlyTarget = 4_500_000;
+  const scopeLabel =
+    currentTenantId === "all"
+      ? `${tenantGroup.name}（全${tenants.length}店舗）`
+      : tenants.find((t) => t.id === currentTenantId)?.branchName ?? "—";
+
+  const monthlyTarget =
+    currentTenantId === "all"
+      ? 9_700_000
+      : currentTenantId === "tenant-demo-01"
+      ? 4_500_000
+      : currentTenantId === "tenant-demo-02"
+      ? 3_000_000
+      : 2_200_000;
   const monthlyActual = Math.round(kpi.totalRevenue30 * 0.87);
   const targetRate = Math.round((monthlyActual / monthlyTarget) * 100);
+
+  const isGroupView = currentTenantId === "all";
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -54,15 +89,22 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">ダッシュボード</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {formatDate(new Date("2026-04-15"), "date")}（水）・デモ整骨院
+            {formatDate(TODAY, "date")}（木）・{scopeLabel}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {isGroupView && (
+            <Badge variant="default" className="text-xs">
+              <Network className="h-3 w-3 mr-1" />
+              グループ横断ビュー
+            </Badge>
+          )}
           <Badge variant="secondary" className="text-xs">
-            <MessageSquareText className="h-3 w-3 mr-1" /> LINE経由予約 24件（今月）
+            <MessageSquareText className="h-3 w-3 mr-1" /> LINE経由予約{" "}
+            {Math.round(scopedReservations.filter((r) => r.source === "line").length / 3)}件（今月）
           </Badge>
           <Badge variant="outline" className="text-xs">
-            データは最終更新 09:00
+            最終更新 09:00
           </Badge>
         </div>
       </div>
@@ -73,7 +115,7 @@ export default function DashboardPage() {
           size="lg"
           label="本日の予約"
           value={`${today.reservations}件`}
-          sub={`来院済 ${today.arrived}件 / 残り ${today.reservations - today.arrived}件`}
+          sub={`来院済 ${today.arrived}件 / 残り ${Math.max(today.reservations - today.arrived, 0)}件`}
           icon={Calendar}
         />
         <KpiCard
@@ -107,7 +149,7 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
             <div>
               <CardTitle>売上推移（過去30日）</CardTitle>
-              <CardDescription>日次売上と来院数の推移</CardDescription>
+              <CardDescription>{isGroupView ? "全店舗集計" : scopeLabel} の日次推移</CardDescription>
             </div>
             <div className="text-right">
               <p className="text-xs text-muted-foreground">30日合計</p>
@@ -122,7 +164,9 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle>今月の目標進捗</CardTitle>
-            <CardDescription>{formatCurrency(monthlyActual)} / {formatCurrency(monthlyTarget)}</CardDescription>
+            <CardDescription>
+              {formatCurrency(monthlyActual)} / {formatCurrency(monthlyTarget)}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -142,7 +186,7 @@ export default function DashboardPage() {
             <div className="space-y-2 pt-2 border-t border-border">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">残り必要額</span>
-                <span className="font-medium">{formatCurrency(monthlyTarget - monthlyActual)}</span>
+                <span className="font-medium">{formatCurrency(Math.max(monthlyTarget - monthlyActual, 0))}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">残り営業日</span>
@@ -151,7 +195,7 @@ export default function DashboardPage() {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">日次必要額</span>
                 <span className="font-medium text-primary">
-                  {formatCurrency(Math.round((monthlyTarget - monthlyActual) / 13))}
+                  {formatCurrency(Math.round(Math.max(monthlyTarget - monthlyActual, 0) / 13))}
                 </span>
               </div>
             </div>
@@ -186,9 +230,11 @@ export default function DashboardPage() {
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle>本日の予約</CardTitle>
-              <CardDescription>直近6件</CardDescription>
+              <CardDescription>直近6件・{scopeLabel}</CardDescription>
             </div>
-            <Link href="/reservations" className="text-xs text-primary hover:underline">すべて表示</Link>
+            <Link href="/reservations" className="text-xs text-primary hover:underline">
+              すべて表示
+            </Link>
           </CardHeader>
           <CardContent>
             {todayReservations.length === 0 ? (
@@ -196,7 +242,7 @@ export default function DashboardPage() {
             ) : (
               <ul className="space-y-3">
                 {todayReservations.map((r) => {
-                  const patient = patients.find((p) => p.id === r.patientId);
+                  const patient = scopedPatients.find((p) => p.id === r.patientId);
                   return (
                     <li key={r.id} className="flex items-center gap-3 text-sm">
                       <span className="font-mono text-xs text-muted-foreground shrink-0 w-12">
@@ -219,10 +265,10 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle>アラート</CardTitle>
-            <CardDescription>要確認 {alerts.length}件</CardDescription>
+            <CardDescription>要確認 {scopedAlerts.length}件</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <AlertList items={alerts.slice(0, 5)} />
+            <AlertList items={scopedAlerts.slice(0, 5)} />
           </CardContent>
         </Card>
 
@@ -230,7 +276,7 @@ export default function DashboardPage() {
           <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle>スタッフランキング</CardTitle>
-              <CardDescription>過去30日売上ベース</CardDescription>
+              <CardDescription>過去30日売上ベース・{scopeLabel}</CardDescription>
             </div>
             <Badge variant="muted" className="text-[10px] flex items-center gap-1">
               <Users className="h-3 w-3" />
@@ -238,7 +284,11 @@ export default function DashboardPage() {
             </Badge>
           </CardHeader>
           <CardContent>
-            <StaffRanking items={ranking} />
+            {ranking.length === 0 ? (
+              <p className="text-sm text-muted-foreground">データなし</p>
+            ) : (
+              <StaffRanking items={ranking} />
+            )}
           </CardContent>
         </Card>
       </div>

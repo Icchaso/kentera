@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/layout/page-header";
-import { staffList, reservations, payments } from "@/lib/data/seed";
+import { staffList, reservations, payments, tenants, tenantGroup, scopeByTenant } from "@/lib/data/seed";
+import { useWorkspace } from "@/hooks/use-workspace-store";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -37,14 +38,24 @@ function startOfWeek(d: Date): Date {
 }
 
 export default function StaffPage() {
+  const { currentTenantId } = useWorkspace();
   const weekStart = startOfWeek(TODAY);
   const weekDays = Array.from({ length: 6 }, (_, i) => new Date(weekStart.getTime() + i * 86400_000));
+  const scopedStaff =
+    currentTenantId === "all" ? staffList : staffList.filter((s) => s.tenantId === currentTenantId);
+  const scopedReservations = scopeByTenant(reservations, currentTenantId);
+  const scopedPayments = scopeByTenant(payments, currentTenantId);
+  const currentTenant = tenants.find((t) => t.id === currentTenantId);
+  const scopeLabel =
+    currentTenantId === "all"
+      ? `${tenantGroup.name}（全${tenants.length}店舗）`
+      : currentTenant?.name ?? "—";
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <PageHeader
         title="スタッフ管理"
-        description={`登録 ${staffList.length}名・アクティブ ${staffList.filter((s) => s.isActive).length}名`}
+        description={`${scopeLabel}・登録 ${scopedStaff.length}名・アクティブ ${scopedStaff.filter((s) => s.isActive).length}名`}
         actions={
           <Button>
             <Plus className="h-4 w-4" />
@@ -62,9 +73,9 @@ export default function StaffPage() {
 
         <TabsContent value="members">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
-            {staffList.map((s) => {
-              const sRes = reservations.filter((r) => r.staffId === s.id && r.status === "paid");
-              const sPay = payments.filter((p) => sRes.some((r) => r.id === p.reservationId));
+            {scopedStaff.map((s) => {
+              const sRes = scopedReservations.filter((r) => r.staffId === s.id && r.status === "paid");
+              const sPay = scopedPayments.filter((p) => sRes.some((r) => r.id === p.reservationId));
               const revenue = sPay.reduce((sum, p) => sum + p.total, 0);
               const isReception = s.roleLabel === "受付";
               const referralRate = isReception ? null : 45 + (s.id.charCodeAt(6) % 40);
@@ -188,7 +199,7 @@ export default function StaffPage() {
                     {["月", "火", "水", "木", "金", "土"][d.getDay() === 0 ? 6 : d.getDay() - 1]} {d.getMonth() + 1}/{d.getDate()}
                   </div>
                 ))}
-                {staffList.map((s) => (
+                {scopedStaff.map((s) => (
                   <React.Fragment key={s.id}>
                     <div className="flex items-center gap-2 px-2 py-3 text-sm">
                       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
@@ -201,7 +212,7 @@ export default function StaffPage() {
                         ["09-20", "13-20", "09-18", "休", "09-18", "09-18"],
                         ["09-18", "09-18", "09-18", "09-18", "09-18", "09-15"],
                       ];
-                      const idx = staffList.indexOf(s) % patterns.length;
+                      const idx = scopedStaff.indexOf(s) % patterns.length;
                       const slot = patterns[idx][i];
                       const off = slot === "休";
                       return (
@@ -234,10 +245,10 @@ export default function StaffPage() {
             </CardHeader>
             <CardContent>
               <ul className="divide-y divide-border">
-                {staffList.map((s, i) => {
-                  const clockIn = ["08:52", "09:03", "09:15", "08:45"][i] ?? "—";
-                  const clockOut = ["—", "—", "—", "—"][i];
-                  const breakMin = [60, 45, 60, 30][i];
+                {scopedStaff.map((s, i) => {
+                  const clockIn = ["08:52", "09:03", "09:15", "08:45", "08:58", "09:02", "08:50"][i] ?? "—";
+                  const clockOut = i < 2 ? "—" : "18:30";
+                  const breakMin = [60, 45, 60, 30, 50, 55, 45][i] ?? 60;
                   return (
                     <li key={s.id} className="flex items-center gap-3 py-3">
                       <Avatar className="h-9 w-9">

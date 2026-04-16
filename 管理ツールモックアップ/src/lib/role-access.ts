@@ -13,9 +13,11 @@ const ROLE_ALLOW: Record<StaffRole, string[] | "all"> = {
     "/sales",
     "/staff",
     "/menus",
+    "/messages",
+    "/insights",
     "/settings",
   ],
-  staff: ["/dashboard", "/reservations", "/patients", "/records"],
+  staff: ["/dashboard", "/reservations", "/patients", "/records", "/messages"],
 };
 
 // 各ナビ項目のroleグループ要件

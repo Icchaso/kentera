@@ -60,7 +60,7 @@ export default function SettingsPage() {
               <CardDescription>名刺・レシート・ネット予約ページに表示されます</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="院名">
                   <Input defaultValue={tenant.name} />
                 </Field>
@@ -106,12 +106,12 @@ export default function SettingsPage() {
                   {["月", "火", "水", "木", "金", "土", "日"].map((d, i) => {
                     const closed = i === 6;
                     return (
-                      <div key={d} className="flex items-center gap-3">
+                      <div key={d} className="flex items-center gap-2 sm:gap-3 flex-wrap">
                         <Checkbox defaultChecked={!closed} />
-                        <span className="w-8 text-sm font-medium">{d}</span>
-                        <Input defaultValue={closed ? "" : "09:00"} disabled={closed} className="w-28" />
+                        <span className="w-6 text-sm font-medium">{d}</span>
+                        <Input defaultValue={closed ? "" : "09:00"} disabled={closed} className="w-24 sm:w-28" />
                         <span className="text-muted-foreground">〜</span>
-                        <Input defaultValue={closed ? "" : "20:00"} disabled={closed} className="w-28" />
+                        <Input defaultValue={closed ? "" : "20:00"} disabled={closed} className="w-24 sm:w-28" />
                         {closed && (
                           <Badge variant="muted" className="text-[10px]">
                             休診
@@ -123,7 +123,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="ベッド数（同時施術上限）">
                   <Input type="number" defaultValue={tenant.bedCount} />
                 </Field>
@@ -166,14 +166,14 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Channel ID">
                     <Input defaultValue="2006789012" readOnly />
                   </Field>
                   <Field label="LIFF ID">
                     <Input defaultValue="2006789012-aBcDeFgH" readOnly />
                   </Field>
-                  <Field label="Webhook URL" className="col-span-2">
+                  <Field label="Webhook URL" className="sm:col-span-2">
                     <Input value="https://cureboard.app/api/line/webhook" readOnly />
                   </Field>
                 </div>
@@ -229,7 +229,7 @@ export default function SettingsPage() {
                 <CardDescription>患者のLINE画面下部に常時表示</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {[
                     { label: "予約する", desc: "LIFFで空き確認→確定" },
                     { label: "予約確認", desc: "変更・キャンセル可" },

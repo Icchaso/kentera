@@ -14,7 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/layout/page-header";
-import { menus, coupons } from "@/lib/data/seed";
+import { menus, coupons, tenants, tenantGroup, scopeByTenant } from "@/lib/data/seed";
+import { useWorkspace } from "@/hooks/use-workspace-store";
 import { formatCurrency } from "@/lib/utils";
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -30,16 +31,25 @@ const CATEGORY_VARIANT: Record<string, "secondary" | "default" | "muted"> = {
 };
 
 export default function MenusPage() {
-  const sorted = [...menus].sort((a, b) => a.sortOrder - b.sortOrder);
+  const { currentTenantId } = useWorkspace();
+  const scopedMenus = scopeByTenant(menus, currentTenantId);
+  const scopedCoupons = scopeByTenant(coupons, currentTenantId);
+  const currentTenant = tenants.find((t) => t.id === currentTenantId);
+  const scopeLabel =
+    currentTenantId === "all"
+      ? `${tenantGroup.name}（全${tenants.length}店舗）`
+      : currentTenant?.name ?? "—";
+
+  const sorted = [...scopedMenus].sort((a, b) => a.sortOrder - b.sortOrder);
   const couponTypes = Array.from(
-    new Map(coupons.map((c) => [c.name, { name: c.name, count: c.totalCount, price: c.price }])).values()
+    new Map(scopedCoupons.map((c) => [c.name, { name: c.name, count: c.totalCount, price: c.price }])).values()
   );
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
       <PageHeader
         title="メニュー管理"
-        description={`メニュー ${menus.length}種・回数券テンプレート ${couponTypes.length}種`}
+        description={`${scopeLabel}・メニュー ${scopedMenus.length}種・回数券テンプレート ${couponTypes.length}種`}
         actions={
           <Button>
             <Plus className="h-4 w-4" />
@@ -119,8 +129,8 @@ export default function MenusPage() {
 
           <div className="grid gap-4 md:grid-cols-3 mt-6">
             {(["insurance", "self_pay", "product"] as const).map((cat) => {
-              const count = menus.filter((m) => m.category === cat).length;
-              const avg = Math.round(menus.filter((m) => m.category === cat).reduce((s, m) => s + m.price, 0) / Math.max(count, 1));
+              const count = scopedMenus.filter((m) => m.category === cat).length;
+              const avg = Math.round(scopedMenus.filter((m) => m.category === cat).reduce((s, m) => s + m.price, 0) / Math.max(count, 1));
               return (
                 <Card key={cat}>
                   <CardContent className="p-4">
